@@ -2,11 +2,11 @@
 
 ## Overview
 
-This Terraform code deploys a CI/CD pipeline for hosting a static blog site using Hugo on AWS. The static blog site is deployed and hosted in a private S3 bucket. A CloudFront distribution is set up with the S3 bucket as an origin. The CloudFront distribution caches the content from S3 bucket and delivers the pages to the blog readers. 
-
-For more details, read my [blog post](https://blog.wkhoo.com/posts/hugo-blog-cicd-part1/).
+This Terraform code deploys a CI/CD pipeline for hosting a static blog site using Hugo on AWS. In a nutshell, the static blog site is deployed and hosted in a private S3 bucket. A CloudFront distribution is set up with the S3 bucket as an origin. The CloudFront distribution fetches and caches the content from S3 bucket and delivers the pages to the blog readers. 
 
 ![My blog site architecture](https://blog.wkhoo.com/images/hugo-blog-architecture_hu7acd83daea2e855bf8f43ae3c5d8625c_111154_800x640_fit_q50_box.jpeg)
+
+For more details, read my [blog post](https://blog.wkhoo.com/posts/hugo-blog-cicd-part1/).
 
 ## Requirements
 
