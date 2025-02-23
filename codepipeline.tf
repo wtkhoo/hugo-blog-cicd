@@ -10,9 +10,9 @@ resource "aws_codecommit_repository" "hugos3blog" {
 # CodeBuild
 # ---------
 resource "aws_codebuild_project" "hugos3blog" {
-  name          = "HugoS3Blog"
-  description   = "Submit build jobs for ${var.repo_name} as part of CI/CD pipeline"
-  service_role  = aws_iam_role.codebuild_service_role.arn
+  name         = "HugoS3Blog"
+  description  = "Submit build jobs for ${var.repo_name} as part of CI/CD pipeline"
+  service_role = aws_iam_role.codebuild_service_role.arn
   artifacts {
     type                = "CODEPIPELINE"
     packaging           = "NONE"
@@ -25,10 +25,6 @@ resource "aws_codebuild_project" "hugos3blog" {
     environment_variable {
       name  = "CLOUDFRONT_DISTRIBUTION_ID"
       value = aws_cloudfront_distribution.s3_blogsite.id
-    }
-    environment_variable {
-      name  = "WEBSITE_BUCKET"
-      value = aws_s3_bucket.blogsite.id
     }
   }
   source {
@@ -61,7 +57,8 @@ phases:
   post_build:
     commands:
       - echo In post_build phase...
-      - echo Skip hugo deploy - publish changes using CodePipeline S3 deploy.
+      - echo CloudFront invalidation
+      - aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_DISTRIBUTION_ID --paths "/*"
 artifacts:
   files:
     - '**/*'
@@ -84,7 +81,7 @@ resource "aws_codepipeline" "hugos3blog" {
   role_arn = aws_iam_role.codepipeline_service_role.arn
 
   artifact_store {
-    location = aws_s3_bucket.artifact.bucket
+    location = aws_s3_bucket.artefact.bucket
     type     = "S3"
   }
 
@@ -96,13 +93,13 @@ resource "aws_codepipeline" "hugos3blog" {
       owner            = "AWS"
       provider         = "CodeCommit"
       version          = "1"
-      output_artifacts = ["SourceArtifact"]
-      configuration    = {
+      output_artifacts = ["SourceArtefact"]
+      configuration = {
         BranchName           = "main"
         PollForSourceChanges = false
         RepositoryName       = aws_codecommit_repository.hugos3blog.repository_name
       }
-      run_order        = 1
+      run_order = 1
     }
   }
 
@@ -114,12 +111,12 @@ resource "aws_codepipeline" "hugos3blog" {
       owner            = "AWS"
       provider         = "CodeBuild"
       version          = "1"
-      input_artifacts  = ["SourceArtifact"]
-      output_artifacts = ["BuildArtifact"]
-      configuration    = {
+      input_artifacts  = ["SourceArtefact"]
+      output_artifacts = ["BuildArtefact"]
+      configuration = {
         ProjectName = aws_codebuild_project.hugos3blog.name
       }
-      run_order        = 1
+      run_order = 1
     }
   }
 
@@ -131,38 +128,12 @@ resource "aws_codepipeline" "hugos3blog" {
       owner           = "AWS"
       provider        = "S3"
       version         = "1"
-      input_artifacts = ["BuildArtifact"]
-      configuration   = {
+      input_artifacts = ["BuildArtefact"]
+      configuration = {
         BucketName = aws_s3_bucket.blogsite.id
         Extract    = "true"
       }
-      run_order       = 1
+      run_order = 1
     }
   }
-}
-
-# ---------------------
-# CloudWatch Event rule 
-# ---------------------
-resource "aws_cloudwatch_event_rule" "codecommit_rule" {
-  name        = "hugo-codecommit-repo-update"
-  description = "Triggered by CodeCommit events to main branch"
-  
-  event_pattern = jsonencode({
-    source      = ["aws.codecommit"]
-    detail-type = ["CodeCommit Repository State Change"]
-    resources   = [aws_codecommit_repository.hugos3blog.arn]
-    detail      = {
-      event         = ["referenceUpdated"]
-      referenceType = ["branch"]
-      referenceName = ["main"]
-    }
-  })
-}
-
-resource "aws_cloudwatch_event_target" "codepipeline_target" {
-  rule      = aws_cloudwatch_event_rule.codecommit_rule.name
-  arn       = aws_codepipeline.hugos3blog.arn
-  role_arn  = aws_iam_role.cwe_pipeline_role.arn
-  target_id = "codepipeline-CICD"
 }

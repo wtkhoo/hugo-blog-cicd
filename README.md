@@ -28,13 +28,13 @@ For more details, read my [blog post](https://blog.wkhoo.com/posts/hugo-blog-cic
    cd hugo-blog-cicd
    ```
 
-3) Run the terraform [init](https://www.terraform.io/cli/commands/init) command to initialize the Terraform deployment and set up the providers.
+3) Run the terraform [init](https://www.terraform.io/cli/commands/init) command to initialise the Terraform deployment and set up the providers.
 
    ```shell
    terraform init
    ```
 
-4) To customize your deployment, create a `terraform.tfvars` file and specify your values.
+4) To customise your deployment, create a `terraform.tfvars` file and specify your values.
 
     ```
    domain_name                = "blog.example.com"

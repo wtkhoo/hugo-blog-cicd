@@ -8,7 +8,7 @@ resource "aws_budgets_budget" "zero_spend" {
   limit_unit        = "USD"
   time_unit         = "MONTHLY"
   time_period_start = formatdate("YYYY-MM-DD_hh:mm", timestamp())
-  
+
   notification {
     comparison_operator        = "GREATER_THAN"
     threshold                  = 0.01
@@ -31,7 +31,7 @@ resource "aws_budgets_budget" "one_dollar" {
   limit_unit        = "USD"
   time_unit         = "MONTHLY"
   time_period_start = formatdate("YYYY-MM-DD_hh:mm", timestamp())
-  
+
   notification {
     comparison_operator        = "GREATER_THAN"
     threshold                  = 85

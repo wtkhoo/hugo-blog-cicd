@@ -19,14 +19,14 @@ variable "hosted_zone" {
   default     = null
 }
 
-variable "artifact_bucket" {
-  description = "S3 bucket name to store build artifacts"
+variable "artefact_bucket" {
+  description = "S3 bucket name to store build artefacts"
   type        = string
-  default     = "hugos3blog-artifacts"
+  default     = "hugos3blog-artefacts"
 }
 
 variable "repo_name" {
-  description = "AWS CodeCommit repository name to store Hugo templates, themes, posts, and other artifacts"
+  description = "AWS CodeCommit repository name to store Hugo templates, themes, posts, and other artefacts"
   type        = string
   default     = "blog-wkhoo"
 }
@@ -61,13 +61,9 @@ variable "cloudfront_max_ttl" {
   default     = 0
 }
 
-variable "cloudfront_geo_restriction_restriction_type" {
+variable "cloudfront_geo_restriction_type" {
   description = "The method that you want to use to restrict distribution of your content by country: none, whitelist, or blacklist."
   default     = "none"
-  validation {
-    error_message = "Can only specify either none, whitelist, blacklist"
-    condition     = can(regex("^(none|whitelist|blacklist)$", var.cloudfront_geo_restriction_restriction_type))
-  }
 }
 
 # ---------------
@@ -79,3 +75,9 @@ locals {
   domain_name   = var.use_default_domain ? [] : [var.domain_name]
 }
 
+# ------------
+# Data sources
+# ------------
+data "aws_caller_identity" "current" {}
+
+data "aws_region" "current" {}

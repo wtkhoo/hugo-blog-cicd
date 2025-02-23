@@ -1,27 +1,10 @@
-# ---------------
-# ACM certificate
-# ---------------
-resource "aws_acm_certificate" "domain_name" {
-  # CloudFront uses certificates from us-east-1 region only
-  provider          = aws.cloudfront
-  count             = var.use_default_domain ? 0 : 1
-  domain_name       = coalesce(var.acm_certificate_domain, "*.${var.hosted_zone}")
-  validation_method = "DNS"
-
-  tags              = var.tags
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
 # -----------------------
 # CloudFront distribution
 # -----------------------
 resource "aws_cloudfront_distribution" "s3_blogsite" {
   origin {
-    domain_name = aws_s3_bucket.blogsite.bucket_regional_domain_name
-    origin_id   = "s3-${var.domain_name}"
+    domain_name              = aws_s3_bucket.blogsite.bucket_regional_domain_name
+    origin_id                = "s3-${var.domain_name}"
     origin_access_control_id = aws_cloudfront_origin_access_control.s3_blogsite.id
   }
 
@@ -46,7 +29,7 @@ resource "aws_cloudfront_distribution" "s3_blogsite" {
     target_origin_id = "s3-${var.domain_name}"
 
     # Managed cache policy
-    cache_policy_id        = "658327ea-f89d-4fab-a63d-7e88639e58f6"
+    cache_policy_id = "658327ea-f89d-4fab-a63d-7e88639e58f6"
 
     viewer_protocol_policy = "redirect-to-https"
 
@@ -54,6 +37,7 @@ resource "aws_cloudfront_distribution" "s3_blogsite" {
     default_ttl = var.cloudfront_default_ttl
     max_ttl     = var.cloudfront_max_ttl
 
+    # Associate CloudFront function to CloudFront distribution 
     function_association {
       event_type   = "viewer-request"
       function_arn = "arn:aws:cloudfront::211125687259:function/hugo-rewrite-pretty-urls"
@@ -64,11 +48,12 @@ resource "aws_cloudfront_distribution" "s3_blogsite" {
 
   restrictions {
     geo_restriction {
-      restriction_type = var.cloudfront_geo_restriction_restriction_type
+      restriction_type = var.cloudfront_geo_restriction_type
       locations        = []
     }
   }
 
+  # Specify a default SSL certificate if use_default_domain is true
   dynamic "viewer_certificate" {
     for_each = local.default_certs
     content {
@@ -76,6 +61,7 @@ resource "aws_cloudfront_distribution" "s3_blogsite" {
     }
   }
 
+  # Specify a custom SSL certificate from ACM if use_default_domain is false
   dynamic "viewer_certificate" {
     for_each = local.acm_certs
     content {
@@ -108,3 +94,27 @@ resource "aws_cloudfront_origin_access_control" "s3_blogsite" {
   signing_protocol                  = "sigv4"
 }
 
+resource "aws_cloudfront_function" "s3_blogsite" {
+  code    = file("${path.module}/functions/hugo-rewrite-pretty-urls.js")
+  comment = "Enable pretty URLs for Hugo"
+  name    = "hugo-rewrite-pretty-urls"
+  publish = true
+  runtime = "cloudfront-js-2.0"
+}
+
+# ---------------
+# ACM certificate
+# ---------------
+resource "aws_acm_certificate" "domain_name" {
+  # CloudFront uses certificates from us-east-1 region only
+  provider          = aws.cloudfront
+  count             = var.use_default_domain ? 0 : 1
+  domain_name       = coalesce(var.acm_certificate_domain, "*.${var.hosted_zone}")
+  validation_method = "DNS"
+
+  tags = var.tags
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
