@@ -10,7 +10,7 @@ resource "aws_cloudwatch_event_rule" "codecommit_rule" {
     detail-type = ["CodeCommit Repository State Change"]
     resources   = [aws_codecommit_repository.hugos3blog.arn]
     detail = {
-      event         = ["referenceUpdated"]
+      event         = ["referenceUpdated", "referenceCreated"]
       referenceType = ["branch"]
       referenceName = ["main"]
     }
